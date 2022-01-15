@@ -1,50 +1,37 @@
 package com.cursojava.curso.models;
 
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Table(name = "transactions")
+@Entity
+@Data
 public class Transaction {
 
+    @Getter @Setter @Column(name = "id")
+    @Id
+    private int id;
+
+    @Getter @Setter @Column(name = "amount")
     private double amount;
+
+    @Getter @Setter @Column(name = "currency")
     private String currency;
+
+    @Getter @Setter @Column(name = "origin_account")
     private String origin_account;
+
+    @Getter @Setter @Column(name = "destination_account")
     private String destination_account;
+
+    @Getter @Setter @Column(name = "description")
     private String description;
 
-    public double getAmount() {
-        return amount;
     }
-
-    public void setAmount(double amount) {
-        this.amount = amount;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public String getOrigin_account() {
-        return origin_account;
-    }
-
-    public void setOrigin_account(String origin_account) {
-        this.origin_account = origin_account;
-    }
-
-    public String getDestination_account() {
-        return destination_account;
-    }
-
-    public void setDestination_account(String destination_account) {
-        this.destination_account = destination_account;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-}
