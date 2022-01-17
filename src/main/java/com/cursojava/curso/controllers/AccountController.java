@@ -6,28 +6,24 @@ import com.cursojava.curso.services.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-public class UserController {
+public class AccountController {
 
     @Autowired
     private AccountService accountRepo;
 
-    @RequestMapping(value = "prueba")
+    @RequestMapping(value = "prueba", method = RequestMethod.GET)
     public List<String> prueba(){
         return List.of("manzana", "pera", "fresa");
     }
 
-    @RequestMapping(value = "transfer")
-    public Transaction transferFunds(){
 
-        return null;
-    }
-
-    @RequestMapping(value = "account/{account_number}")
+    @RequestMapping(value = "account/{account_number}", method = RequestMethod.GET)
     public Account getAccount(@PathVariable String account_number){
         /** Account origin = new Account();
         origin.setAccount_number(account_number);
@@ -36,7 +32,7 @@ public class UserController {
         return null;
     }
 
-    @RequestMapping(value = "accounts")
+    @RequestMapping(value = "accounts", method = RequestMethod.GET)
     public List<Account> getAccountList(){
         return null;
     }

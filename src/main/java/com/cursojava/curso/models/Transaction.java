@@ -17,10 +17,10 @@ public class Transaction {
 
     @Getter @Setter @Column(name = "id")
     @Id
-    private int id;
+    private Long id;
 
     @Getter @Setter @Column(name = "amount")
-    private double amount;
+    private Double amount;
 
     @Getter @Setter @Column(name = "currency")
     private String currency;
