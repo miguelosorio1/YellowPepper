@@ -34,4 +34,6 @@ public class Transaction {
     @Getter @Setter @Column(name = "description")
     private String description;
 
+    public Transaction(Double amount, String currency, String origin_account, String destination_account, String description) {
     }
+}

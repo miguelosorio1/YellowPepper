@@ -10,9 +10,10 @@ import org.springframework.stereotype.Service;
 public class AccountServiceImpl implements AccountService{
 
     AccountRepository accountRepo;
-    Account account = accountRepo.findByAccountNumberEquals("");
+    //Account account = accountRepo.findByAccount_number("");
 
-
-
-
+    @Autowired
+    public AccountServiceImpl(AccountRepository accountRepo) {
+        this.accountRepo = accountRepo;
+    }
 }
