@@ -20,7 +20,7 @@ public class TransactionMapper {
      **/
 
     public Transaction toEntity(TransactionDTO transactionDTO) {
-        return new Transaction(transactionDTO.getAmount(), transactionDTO.getCurrency(), transactionDTO.getOrigin_account(),
+        return new Transaction(null, transactionDTO.getAmount(), transactionDTO.getCurrency(), transactionDTO.getOrigin_account(),
                 transactionDTO.getDestination_account(), transactionDTO.getDescription());
     }
 }

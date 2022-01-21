@@ -17,18 +17,23 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TransactionController {
 
-    @Autowired
     private TransactionService transactionService;
-    @Autowired
     private TransactionMapper mapper;
 
     @RequestMapping(value = "transfer", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseDTO transfer(@RequestBody final TransactionDTO transactionDTO){
+        System.out.println(transactionDTO);
         Transaction transaction = mapper.toEntity(transactionDTO);
+        System.out.println(transaction.getCurrency());
 
         return transactionService.transfer(transaction);
     }
 
 
+    @Autowired
+    public TransactionController(TransactionService transactionService, TransactionMapper mapper) {
+        this.transactionService = transactionService;
+        this.mapper = mapper;
+    }
 }

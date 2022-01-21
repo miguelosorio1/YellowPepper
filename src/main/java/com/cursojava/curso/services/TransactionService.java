@@ -7,5 +7,5 @@ import com.cursojava.curso.models.Transaction;
 public interface TransactionService {
 
     ResponseDTO transfer(Transaction transaction);
-    int verifyAttempt(TransactionDTO transaction);
+    boolean checkTransfersDay(Transaction transaction)throws Exception;
 }

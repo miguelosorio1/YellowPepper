@@ -3,16 +3,12 @@ package com.cursojava.curso.dtos;
 import lombok.*;
 
 @Data
-@AllArgsConstructor
 public class TransactionDTO {
 
-    Double amount;
-    String currency;
-    String origin_account;
-    String destination_account;
-    String description;
+    private Double amount;
+    private String currency;
+    private String origin_account;
+    private String destination_account;
+    private String description;
 
-    public Double getAmount() {
-        return amount;
-    }
 }

@@ -1,28 +1,21 @@
 package com.cursojava.curso.models;
 
-import lombok.*;
+import lombok.Data;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.sql.Timestamp;
 
-@Table(name = "transactions")
+@Table(name = "transfers")
 @Entity
-@NoArgsConstructor
-@AllArgsConstructor
 @Data
-public class Transaction {
+public class Transfer {
 
     @Column(name = "id")
     @Id
     private Long id;
-
-    @Column(name = "amount")
-    private Double amount;
-
-    @Column(name = "currency")
-    private String currency;
 
     @Column(name = "origin_account")
     private String origin_account;
@@ -30,8 +23,9 @@ public class Transaction {
     @Column(name = "destination_account")
     private String destination_account;
 
-    @Column(name = "description")
-    private String description;
+    @Column(name = "transaction_id")
+    private Long transaction_id;
 
-
+    @Column(name = "timestamp")
+    private Timestamp timestamp;
 }
