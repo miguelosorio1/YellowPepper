@@ -13,7 +13,7 @@ import java.util.List;
 public class ResponseDTO {
 
     String status;
-    List<ErrorDTO> errors;
+    List<String> errors;
     Double tax_collected;
     @Nullable
     Double CAD;

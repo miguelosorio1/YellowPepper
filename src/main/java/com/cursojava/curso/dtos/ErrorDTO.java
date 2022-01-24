@@ -4,5 +4,6 @@ public class ErrorDTO {
 
     public static final String INSUFFICIENT_FUNDS = "insufficient-funds";
     public static final String LIMIT_EXCEEDED = "limit-exceeded";
+    public static final String STATUS_ERROR = "ERROR";
 
 }

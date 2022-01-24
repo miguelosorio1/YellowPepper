@@ -6,13 +6,14 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.io.Serializable;
 
 @Table(name = "transactions")
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class Transaction {
+public class Transaction implements Serializable {
 
     @Column(name = "id")
     @Id

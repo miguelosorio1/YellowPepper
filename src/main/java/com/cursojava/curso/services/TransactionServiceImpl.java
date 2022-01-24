@@ -3,8 +3,10 @@ package com.cursojava.curso.services;
 import com.cursojava.curso.dtos.ErrorDTO;
 import com.cursojava.curso.dtos.ResponseDTO;
 import com.cursojava.curso.dtos.TransactionDTO;
+import com.cursojava.curso.models.Account;
 import com.cursojava.curso.models.Transaction;
 import com.cursojava.curso.models.Transfer;
+import com.cursojava.curso.repositories.AccountRepository;
 import com.cursojava.curso.repositories.TransactionRepository;
 import com.cursojava.curso.repositories.TransfersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,38 +30,67 @@ public class TransactionServiceImpl implements TransactionService{
 
     TransactionRepository transactionRepo;
     TransfersRepository transfersRepo;
-    List<ErrorDTO> errors;
+    AccountRepository accountRepo;
+    ErrorDTO errorDTO;
 
     @Override
     public ResponseDTO transfer(Transaction transaction) {
 
-
+        ResponseDTO responseDTO = new ResponseDTO();
+        List<String> errors = new ArrayList<>();
         boolean checkTransfer = false;
         try {
             checkTransfer = checkTransfersDay(transaction);
+
+            double taxes = taxCollected(transaction);
+
+
+            if(checkTransfer){
+                // Less than 3
+                Transfer transfer = new Transfer();
+                boolean transactionDone = applyTransaction(taxes, transaction);
+                transfer.setTransaction_id(transaction.getId());
+                transfer.setDestination_account(transaction.getDestination_account());
+                transfer.setOrigin_account(transaction.getOrigin_account());
+                transfer.setTimestamp(new Timestamp(System.currentTimeMillis()));
+                transfersRepo.save(transfer);
+
+                responseDTO.setStatus(HttpStatus.OK.toString());
+                responseDTO.setTax_collected(taxes);
+                responseDTO.setErrors(errors);
+                responseDTO.setCAD(convertToCAD());
+                System.out.println(transaction.toString());
+            }
+
+
         } catch (Exception e) {
             e.printStackTrace();
-        }
-        Double taxes = taxCollected(transaction);
-
-        ResponseDTO responseDTO = new ResponseDTO();
-
-        if(checkTransfer){
-            // Less than 3
-            responseDTO.setStatus(HttpStatus.OK.toString());
-            responseDTO.setTax_collected(taxes);
-            responseDTO.setErrors(null);
-            responseDTO.setCAD(0.0);
-            System.out.println(transaction.toString());
-        }else{
-            // More than 3
-            responseDTO.setStatus("ERROR");
+            errors.add(e.getMessage());
+            responseDTO.setStatus(ErrorDTO.STATUS_ERROR);
             responseDTO.setTax_collected(0.00);
             responseDTO.setErrors(null);
+            return responseDTO;
+
         }
 
-
         return responseDTO;
+
+    }
+
+    private Double convertToCAD() {
+        return 0.00;
+    }
+
+    private boolean applyTransaction(double tax, Transaction transaction) throws Exception{
+        Account account = accountRepo.encontrarByAccount_number(transaction.getOrigin_account()).get(0);
+        account.setAccount_balance(account.getAccount_balance()-transaction.getAmount());
+        account.setAccount_balance(account.getAccount_balance()-tax);
+        if(account.getAccount_balance()<0){
+            throw new Exception(ErrorDTO.INSUFFICIENT_FUNDS);
+        }
+        transactionRepo.save(transaction);
+        accountRepo.save(account);
+        return true;
     }
 
     @Override
@@ -89,7 +120,7 @@ public class TransactionServiceImpl implements TransactionService{
             }
         }
         if(counter >= 3){
-            return false;
+            throw new Exception(ErrorDTO.LIMIT_EXCEEDED);
         }else{
             return true;
         }
@@ -100,9 +131,10 @@ public class TransactionServiceImpl implements TransactionService{
     }
 
     @Autowired
-    public TransactionServiceImpl(TransactionRepository transactionRepo, TransfersRepository transfersRepo, List<ErrorDTO> errors) {
+    public TransactionServiceImpl(TransactionRepository transactionRepo, TransfersRepository transfersRepo, AccountRepository accountRepo, ErrorDTO errorDTO) {
         this.transactionRepo = transactionRepo;
         this.transfersRepo = transfersRepo;
-        this.errors = errors;
+        this.errorDTO = errorDTO;
+        this.accountRepo = accountRepo;
     }
 }
