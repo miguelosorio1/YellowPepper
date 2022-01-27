@@ -7,6 +7,7 @@ import lombok.Setter;
 import lombok.Value;
 import org.springframework.lang.Nullable;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -14,9 +15,8 @@ public class ResponseDTO {
 
     String status;
     List<String> errors;
-    Double tax_collected;
-    @Nullable
-    Double CAD;
+    BigDecimal tax_collected;
+    BigDecimal CAD;
 
 
 }

@@ -13,5 +13,5 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     //List<Account> getAccountList();
     //Double getAccountBalance(String account_number);
     @Query("SELECT t FROM Account t WHERE t.account_number = ?1")
-    List<Account> encontrarByAccount_number (@Param("account_number")String account_number);
+    List<Account> findByAccount_number(@Param("account_number")String account_number);
 }

@@ -1,13 +1,11 @@
 package com.cursojava.curso.controllers;
 
+import com.cursojava.curso.dtos.AccountDTO;
 import com.cursojava.curso.models.Account;
 import com.cursojava.curso.models.Transaction;
 import com.cursojava.curso.services.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -15,30 +13,11 @@ import java.util.List;
 public class AccountController {
 
     @Autowired
-    private AccountService accountRepo;
+    private AccountService accountService;
 
-    @RequestMapping(value = "prueba", method = RequestMethod.GET)
-    public List<String> prueba(){
-        return List.of("manzana", "pera", "fresa");
+    @RequestMapping(value = "account", params = {"account_number"},method = RequestMethod.GET)
+    public AccountDTO getAccountBalance(@RequestParam(value = "account_number") String account_number){
+        return accountService.getAccountBalance(account_number);
     }
 
-
-    @RequestMapping(value = "account/{account_number}", method = RequestMethod.GET)
-    public Account getAccount(@PathVariable String account_number){
-        /** Account origin = new Account();
-        origin.setAccount_number(account_number);
-        origin.setAccount_balance(500000.0);
-         **/
-        return null;
-    }
-
-    @RequestMapping(value = "accounts", method = RequestMethod.GET)
-    public List<Account> getAccountList(){
-        return null;
-    }
-
-
-    // Get CURRENCY del API
-
-    // Post con la transferencia
 }

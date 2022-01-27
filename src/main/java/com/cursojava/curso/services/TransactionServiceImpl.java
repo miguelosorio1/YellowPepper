@@ -1,37 +1,59 @@
 package com.cursojava.curso.services;
 
-import com.cursojava.curso.dtos.ErrorDTO;
+import com.cursojava.curso.dtos.ErrorEnum;
 import com.cursojava.curso.dtos.ResponseDTO;
-import com.cursojava.curso.dtos.TransactionDTO;
 import com.cursojava.curso.models.Account;
 import com.cursojava.curso.models.Transaction;
 import com.cursojava.curso.models.Transfer;
 import com.cursojava.curso.repositories.AccountRepository;
 import com.cursojava.curso.repositories.TransactionRepository;
 import com.cursojava.curso.repositories.TransfersRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import kong.unirest.Unirest;
+import kong.unirest.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletResponse;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.http.HttpResponse;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+
+import static com.cursojava.curso.dtos.ErrorEnum.*;
 
 @Service
 public class TransactionServiceImpl implements TransactionService{
 
-    public final static Double TAX_ON_TRANSFERS = 0.05;
-    public final static Double TAX_COMMON = 0.02;
+    public final static BigDecimal TAX_ON_TRANSFERS = BigDecimal.valueOf(0.05);
+    public final static BigDecimal TAX_COMMON = BigDecimal.valueOf(0.02);
+
+    @Value("${exchangeratesapi.uri}")
+    public String host;
+    @Value("${exchangeratesapi.access_key}")
+    public String access_key;
+    @Value("${exchangeratesapi.base}")
+    public String base;
+    @Value("${exchangeratesapi.symbols}")
+    public String symbols;
+
 
     TransactionRepository transactionRepo;
     TransfersRepository transfersRepo;
     AccountRepository accountRepo;
-    ErrorDTO errorDTO;
+    WebClient webClient;
 
     @Override
     public ResponseDTO transfer(Transaction transaction) {
@@ -41,34 +63,31 @@ public class TransactionServiceImpl implements TransactionService{
         boolean checkTransfer = false;
         try {
             checkTransfer = checkTransfersDay(transaction);
-
-            double taxes = taxCollected(transaction);
-
+            BigDecimal taxes = taxCollected(transaction);
 
             if(checkTransfer){
                 // Less than 3
                 Transfer transfer = new Transfer();
-                boolean transactionDone = applyTransaction(taxes, transaction);
+
+                applyTransaction(taxes, transaction);
+
                 transfer.setTransaction_id(transaction.getId());
                 transfer.setDestination_account(transaction.getDestination_account());
                 transfer.setOrigin_account(transaction.getOrigin_account());
                 transfer.setTimestamp(new Timestamp(System.currentTimeMillis()));
                 transfersRepo.save(transfer);
 
-                responseDTO.setStatus(HttpStatus.OK.toString());
+                responseDTO.setStatus(STATUS_OK.label);
                 responseDTO.setTax_collected(taxes);
                 responseDTO.setErrors(errors);
-                responseDTO.setCAD(convertToCAD());
-                System.out.println(transaction.toString());
+                responseDTO.setCAD(convertToCAD(transaction.getAmount()));
             }
-
-
         } catch (Exception e) {
-            e.printStackTrace();
             errors.add(e.getMessage());
-            responseDTO.setStatus(ErrorDTO.STATUS_ERROR);
-            responseDTO.setTax_collected(0.00);
-            responseDTO.setErrors(null);
+            responseDTO.setStatus(STATUS_ERROR.label);
+            responseDTO.setTax_collected(BigDecimal.valueOf(0.0));
+            responseDTO.setErrors(errors);
+            System.out.println(e.getStackTrace() + e.getMessage());
             return responseDTO;
 
         }
@@ -77,39 +96,78 @@ public class TransactionServiceImpl implements TransactionService{
 
     }
 
-    private Double convertToCAD() {
-        return 0.00;
+    public BigDecimal convertToCAD(BigDecimal amount) throws Exception{
+
+        BigDecimal toCad = BigDecimal.valueOf(0.0);
+
+        RestTemplate restTemplate = new RestTemplate();
+        String urlTemplate = UriComponentsBuilder.fromHttpUrl(host)
+                .queryParam("access_key", access_key)
+                .queryParam("base", base)
+                .queryParam("symbols", symbols)
+                .encode()
+                .toUriString();
+        JsonNode jsonResponse = restTemplate.getForObject(
+                urlTemplate
+                , JsonNode.class);
+
+        System.out.println("JSONResponse " + jsonResponse);
+        JsonNode rates = jsonResponse.get("rates");
+        System.out.println(rates);
+
+        BigDecimal bigEUR = new BigDecimal(rates.get("EUR").toString());
+        BigDecimal bigCAD = new BigDecimal(rates.get("CAD").toString());
+        BigDecimal bigUSD = new BigDecimal(rates.get("USD").toString());
+        System.out.println(bigUSD);
+
+        BigDecimal eurAmount = (bigEUR.divide(bigUSD, 6, RoundingMode.HALF_UP)).multiply(amount);
+        System.out.println(eurAmount);
+
+        toCad = eurAmount.multiply(bigCAD);
+        System.out.println(toCad);
+
+        return toCad;
     }
 
-    private boolean applyTransaction(double tax, Transaction transaction) throws Exception{
-        Account account = accountRepo.encontrarByAccount_number(transaction.getOrigin_account()).get(0);
-        account.setAccount_balance(account.getAccount_balance()-transaction.getAmount());
-        account.setAccount_balance(account.getAccount_balance()-tax);
-        if(account.getAccount_balance()<0){
-            throw new Exception(ErrorDTO.INSUFFICIENT_FUNDS);
+    private void applyTransaction(BigDecimal tax, Transaction transaction) throws Exception{
+
+        List<Account> originList = accountRepo.findByAccount_number(transaction.getOrigin_account());
+        if(!originList.isEmpty()){
+            Account account = originList.get(0);
+            account.setAccount_balance(account.getAccount_balance().subtract(transaction.getAmount()));
+            account.setAccount_balance(account.getAccount_balance().subtract(tax));
+            if (account.getAccount_balance().compareTo(BigDecimal.valueOf(0)) < 0) {
+                throw new Exception(INSUFFICIENT_FUNDS.label);
+            }
+            List<Account> destinationList = accountRepo.findByAccount_number(transaction.getDestination_account());
+            if(!originList.isEmpty()){
+                Account destination = originList.get(0);
+                destination.setAccount_balance(destination.getAccount_balance().add(transaction.getAmount()));
+                transactionRepo.save(transaction);
+                accountRepo.save(account);
+                accountRepo.save(destination);
+            }else{
+                throw new Exception(NONEXISTENT_ACCOUNT.label);
+            }
+        }else{
+            throw new Exception(NONEXISTENT_ACCOUNT.label);
         }
-        transactionRepo.save(transaction);
-        accountRepo.save(account);
-        return true;
+
     }
 
     @Override
     public boolean checkTransfersDay(Transaction transaction) throws Exception{
-        List<Transfer> transfers = transfersRepo.findAll();
-        // TODO
-        //List<Transfer> transfersToday = new ArrayList<>();
+        List<Transfer> transfers = transfersRepo.findByOrigin_account(transaction.getOrigin_account());
 
         Timestamp actual=new Timestamp(System.currentTimeMillis());
         Date actualDate=new Date(actual.getTime());
         LocalDate localDate1 = actualDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-        System.out.println("actualDate " + actualDate);
         int counter = 0;
         if(transfers.isEmpty()){
-            System.out.println("Is true");
             return true;
         }else{
-            for (Transfer t:transfers) {
+            for (Transfer t : transfers) {
                 Timestamp ts = t.getTimestamp();
                 Date date = new Date(ts.getTime());
                 LocalDate localDate2 = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
@@ -119,22 +177,23 @@ public class TransactionServiceImpl implements TransactionService{
                 System.out.println("date in loop "+ date);
             }
         }
-        if(counter >= 3){
-            throw new Exception(ErrorDTO.LIMIT_EXCEEDED);
+        if(counter >= 15){
+            throw new Exception(LIMIT_EXCEEDED.label);
         }else{
             return true;
         }
     }
 
-    public Double taxCollected(Transaction transaction){
-        return transaction.getAmount() > 100.0 ? transaction.getAmount()*TAX_ON_TRANSFERS : transaction.getAmount()*TAX_COMMON;
+    private BigDecimal taxCollected(Transaction transaction){
+        return transaction.getAmount().compareTo(BigDecimal.valueOf(100.0)) > 0 ? transaction.getAmount().multiply(TAX_ON_TRANSFERS) : transaction.getAmount().multiply(TAX_COMMON);
     }
 
+
     @Autowired
-    public TransactionServiceImpl(TransactionRepository transactionRepo, TransfersRepository transfersRepo, AccountRepository accountRepo, ErrorDTO errorDTO) {
+    public TransactionServiceImpl(TransactionRepository transactionRepo, TransfersRepository transfersRepo, AccountRepository accountRepo) {
         this.transactionRepo = transactionRepo;
         this.transfersRepo = transfersRepo;
-        this.errorDTO = errorDTO;
         this.accountRepo = accountRepo;
+
     }
 }

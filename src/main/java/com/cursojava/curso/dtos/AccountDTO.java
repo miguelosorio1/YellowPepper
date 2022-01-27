@@ -5,12 +5,15 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 @Data
 public class AccountDTO {
 
-    @Getter @Setter
-    String account_number;
-    @Getter @Setter
-    Double account_balance;
+
+    String status;
+    List<String> errors;
+    BigDecimal account_balance;
 
 }

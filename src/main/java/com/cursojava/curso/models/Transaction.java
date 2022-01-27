@@ -2,11 +2,9 @@ package com.cursojava.curso.models;
 
 import lombok.*;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 @Table(name = "transactions")
 @Entity
@@ -15,12 +13,14 @@ import java.io.Serializable;
 @Data
 public class Transaction implements Serializable {
 
-    @Column(name = "id")
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Basic(optional = false)
+    @Column(name = "id",unique=true, nullable = false)
     private Long id;
 
     @Column(name = "amount")
-    private Double amount;
+    private BigDecimal amount;
 
     @Column(name = "currency")
     private String currency;
