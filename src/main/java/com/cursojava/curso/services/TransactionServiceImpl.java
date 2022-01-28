@@ -120,7 +120,7 @@ public class TransactionServiceImpl implements TransactionService{
         BigDecimal bigUSD = new BigDecimal(rates.get("USD").toString());
         System.out.println(bigUSD);
 
-        BigDecimal eurAmount = (bigEUR.divide(bigUSD, 6, RoundingMode.HALF_UP)).multiply(amount);
+        BigDecimal eurAmount = (bigEUR.divide(bigUSD, 5, RoundingMode.HALF_UP)).multiply(amount);
         System.out.println(eurAmount);
 
         toCad = eurAmount.multiply(bigCAD);
@@ -177,7 +177,7 @@ public class TransactionServiceImpl implements TransactionService{
                 System.out.println("date in loop "+ date);
             }
         }
-        if(counter >= 15){
+        if(counter >= 3){
             throw new Exception(LIMIT_EXCEEDED.label);
         }else{
             return true;

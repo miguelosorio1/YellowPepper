@@ -9,8 +9,11 @@ import com.cursojava.curso.repositories.TransfersRepository;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.math.BigDecimal;
@@ -20,19 +23,19 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
+@SpringBootTest
+public class TransactionServiceImplTest {
 
-class TransactionServiceImplTest {
     @Mock
     private TransactionRepository transactionRepository;
     @Mock
     private AccountRepository accountRepository;
     @Mock
     private TransfersRepository transfersRepository;
-    @Mock
-    private WebClient webClient;
 
     @InjectMocks
     private TransactionService transactionService = new TransactionServiceImpl(transactionRepository, transfersRepository, accountRepository);
+
 
     @BeforeEach
     void setMockOutput() {
@@ -67,19 +70,30 @@ class TransactionServiceImplTest {
 
     @Test
     void transfer() {
-        Transaction transaction1 = new Transaction(null, BigDecimal.valueOf(2500), "USD", "Test2", "Test1", "Description");
+        Transaction transaction1 = new Transaction(null, BigDecimal.valueOf(2500), "USD", "Test1", "Test2", "Description");
+        System.out.println(transactionService.transfer(transaction1).getErrors());
         assertEquals("OK", transactionService.transfer(transaction1).getStatus());
     }
 
+    @SneakyThrows
     @Test
     void convertToCAD() {
+        try {
+            BigDecimal toCad = transactionService.convertToCAD(BigDecimal.valueOf(5000));
+            assertEquals(BigDecimal.valueOf(6367.722060700000), toCad);
+        }catch (Exception e){
 
+        }
     }
 
     @SneakyThrows
     @Test
     void checkTransfersDay() {
-        Transaction transaction1 = new Transaction(null, BigDecimal.valueOf(2500), "USD", "Test2", "Test1", "Description");
-        assertEquals(true, transactionService.checkTransfersDay(transaction1));
+        try{
+            Transaction transaction1 = new Transaction(null, BigDecimal.valueOf(2500), "USD", "Test2", "Test1", "Description");
+            assertEquals(true, transactionService.checkTransfersDay(transaction1));
+        }catch (Exception e){
+
+        }
     }
 }
