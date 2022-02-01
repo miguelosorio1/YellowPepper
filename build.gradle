@@ -3,6 +3,7 @@ plugins {
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 	id 'java'
 	id 'war'
+	id 'jacoco'
 }
 
 group = 'com.cursojava'
@@ -33,4 +34,9 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport // report is always generated after tests run
+}
+jacoco {
+	toolVersion = "0.8.7"
+	reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
 }

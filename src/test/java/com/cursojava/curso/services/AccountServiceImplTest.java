@@ -36,5 +36,7 @@ class AccountServiceImplTest {
     @Test
     void getAccountBalance() {
         assertEquals(BigDecimal.valueOf(25000), accountService.getAccountBalance("test1").getAccount_balance());
+        assertEquals("ERROR", accountService.getAccountBalance("test2").getStatus());
+
     }
 }

@@ -53,7 +53,7 @@ public class TransactionServiceImpl implements TransactionService{
     TransactionRepository transactionRepo;
     TransfersRepository transfersRepo;
     AccountRepository accountRepo;
-    WebClient webClient;
+    RestTemplate restTemplate;
 
     @Override
     public ResponseDTO transfer(Transaction transaction) {
@@ -64,7 +64,7 @@ public class TransactionServiceImpl implements TransactionService{
         try {
             checkTransfer = checkTransfersDay(transaction);
             BigDecimal taxes = taxCollected(transaction);
-
+            BigDecimal toCad = convertToCAD(transaction.getAmount());
             if(checkTransfer){
                 // Less than 3
                 Transfer transfer = new Transfer();
@@ -80,7 +80,7 @@ public class TransactionServiceImpl implements TransactionService{
                 responseDTO.setStatus(STATUS_OK.label);
                 responseDTO.setTax_collected(taxes);
                 responseDTO.setErrors(errors);
-                responseDTO.setCAD(convertToCAD(transaction.getAmount()));
+                responseDTO.setCAD(toCad);
             }
         } catch (Exception e) {
             errors.add(e.getMessage());
@@ -100,7 +100,7 @@ public class TransactionServiceImpl implements TransactionService{
 
         BigDecimal toCad = BigDecimal.valueOf(0.0);
 
-        RestTemplate restTemplate = new RestTemplate();
+        restTemplate = new RestTemplate();
         String urlTemplate = UriComponentsBuilder.fromHttpUrl(host)
                 .queryParam("access_key", access_key)
                 .queryParam("base", base)
@@ -140,13 +140,17 @@ public class TransactionServiceImpl implements TransactionService{
                 throw new Exception(INSUFFICIENT_FUNDS.label);
             }
             List<Account> destinationList = accountRepo.findByAccount_number(transaction.getDestination_account());
-            if(!originList.isEmpty()){
-                Account destination = originList.get(0);
+            if(!destinationList.isEmpty()){
+                Account destination = destinationList.get(0);
                 destination.setAccount_balance(destination.getAccount_balance().add(transaction.getAmount()));
                 transactionRepo.save(transaction);
                 accountRepo.save(account);
                 accountRepo.save(destination);
             }else{
+                System.out.println("ORIGIN: " + transaction.getOrigin_account());
+                System.out.println("DESTINATION: " + transaction.getDestination_account());
+                System.out.println("actual: " );
+
                 throw new Exception(NONEXISTENT_ACCOUNT.label);
             }
         }else{
@@ -190,10 +194,11 @@ public class TransactionServiceImpl implements TransactionService{
 
 
     @Autowired
-    public TransactionServiceImpl(TransactionRepository transactionRepo, TransfersRepository transfersRepo, AccountRepository accountRepo) {
+    public TransactionServiceImpl(TransactionRepository transactionRepo, TransfersRepository transfersRepo, AccountRepository accountRepo, RestTemplate restTemplate) {
         this.transactionRepo = transactionRepo;
         this.transfersRepo = transfersRepo;
         this.accountRepo = accountRepo;
+        this.restTemplate = restTemplate;
 
     }
 }
